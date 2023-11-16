@@ -1,14 +1,16 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
 public class Board {
+    private Random rand;
     private ArrayList<ArrayList<Space>> board;
     private ArrayList<Treasure> remainingTreasures;
     private int gazooRow;
     private int gazooCol;
     private Explorer gazoo;
-//sub that creates a board and everything in it
+    //sub that creates a board and everything in it
     public Board(int numRows, int numCols) {
         board = new ArrayList<>();
 
@@ -28,6 +30,7 @@ public class Board {
         instantiateTreasures();
         createMonsters();
         placeTreasures();
+        createHealer();
     }
     //places treasures randomly for each treasure in treasure remaining
     public void placeTreasures() {
@@ -36,7 +39,7 @@ public class Board {
         }
     }
 
-        //sub that provides movement controls of gazoo
+    //sub that provides movement controls of gazoo
     public boolean move(char m) {
         //checks if game is over and then prints game over if so
         if (isGameOver()) {
@@ -78,13 +81,14 @@ public class Board {
         if (occupant != null) {
             if (occupant instanceof Monster) {
                 int newHealth = Monster.hurt((this.gazoo));
+                System.out.println("Gazoo Encountered " + occupant.getName() + " and lost " + ((Monster) occupant).getDamage() + " health and now has " + gazoo.getHealth() + " Health.");
                 if (newHealth <= 0) {
                     System.out.println("Gazoo has died!");
                     endGame();
                 }
             } else if (occupant instanceof Healer) {
                 int newHealth = ((Healer) occupant).hurt(gazoo);
-                System.out.println("Gazoo healed by " + ((Healer) occupant).getHealValue() + " health points.");
+                System.out.println("Gazoo healed by " + ((Healer) occupant).getHealValue() + " health points and now has " + gazoo.getHealth() + " Health.");
             }
 
             board.get(newGazooRow).get(newGazooCol).setOccupant(gazoo);
@@ -116,7 +120,7 @@ public class Board {
 
 
     }
-//checks if game is over and if so returns true
+    //checks if game is over and if so returns true
     public boolean isGameOver() {
         return gazoo.getHealth() <= 0 || remainingTreasures.isEmpty();
     }
@@ -127,11 +131,11 @@ public class Board {
         System.out.println("Total value of treasures: " + gazoo.getTreasureValue());
         System.exit(0);
     }
-//checks if the move is not out of bounds
+    //checks if the move is not out of bounds
     private boolean isValidMove(int row, int col) {
         return row >= 0 && row < board.size() && col >= 0 && col < board.get(0).size();
     }
-//prints the board with the content as if true is passed in then it shows everything
+    //prints the board with the content as if true is passed in then it shows everything
     public void printBoard(boolean showContents) {
         for (ArrayList<Space> row : board) {
             for (Space space : row) {
@@ -142,7 +146,7 @@ public class Board {
     }
 
 
-//instantiates 5 treasures in the remaining treasure arraylist
+    //instantiates 5 treasures in the remaining treasure arraylist
     public void instantiateTreasures(){
         remainingTreasures = new ArrayList<>();
         remainingTreasures.add(new Treasure());
@@ -151,6 +155,13 @@ public class Board {
         remainingTreasures.add(new Treasure());
         remainingTreasures.add(new Treasure());
     }
+
+    public void createHealer(){
+        Healer healer = new Healer("Healer", 1, ConsoleColors.BLUE, 5);
+        placeRandomly(healer);
+    }
+
+
     //creates 5 monsters to be added to the game
     public void createMonsters() {
         Monster razorclaw = new Monster("Razorclaw", 3, ConsoleColors.RED, 9);
@@ -167,21 +178,22 @@ public class Board {
     }
     //places monsters randomly on the board
     public void placeRandomly(LivingThing entity) {
+
         int row, col;
         do {
             row = (int) (Math.random() * board.size());
             col = (int) (Math.random() * board.get(0).size());
-        } while (board.get(row).get(col).getOccupant() != null);
+        } while (validSpace(row,col) == false);
 
         board.get(row).get(col).setOccupant(entity);
     }
-//places treasure randomly on the board
+    //places treasure randomly on the board
     public void placeRandomly(Treasure treasure) {
         int row, col;
         do {
             row = (int) (Math.random() * board.size());
             col = (int) (Math.random() * board.get(0).size());
-        } while (board.get(row).get(col).getCache() != null);
+        } while (validSpace(row,col) == false);
 
         board.get(row).get(col).setCache(treasure);
     }
@@ -206,11 +218,19 @@ public class Board {
             if (board.move(move)) {
                 System.out.println("Moved Gazoo " + move);
                 board.printBoard(false);
-            } else {
-                System.out.println("Invalid move " + move);
             }
         }
 
         scanner.close();
+    }
+    public boolean validSpace(int row, int col){
+        Space space = new Space();
+        if (board.get(row).get(col).getCache() != null) {
+            return false;
+        }else if(board.get(row).get(col).getOccupant() != null) {
+            return false;
+        }else{
+            return true;
+        }
     }
 }
